@@ -4,72 +4,158 @@ import { Link } from 'react-router-dom';
 
 function StudentList() {
   const [students, setStudents] = useState([]);
-  const [formData, setFormData] = useState({
+  const [form, setForm] = useState({
     name: '',
     email: '',
     phone: '',
     cfHandle: ''
   });
+  const [editId, setEditId] = useState(null);
 
   useEffect(() => {
-    fetchStudents();
+    getStudents();
   }, []);
 
-  const fetchStudents = () => {
+  const getStudents = () => {
     axios.get('http://localhost:5000/api/students')
-      .then((res) => setStudents(res.data))
-      .catch((err) => console.error(err));
+      .then(res => setStudents(res.data))
+      .catch(err => console.log(err));
   };
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+  const handleChange = e => {
+    setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = e => {
     e.preventDefault();
-    axios.post('http://localhost:5000/api/students', formData)
-      .then(() => {
-        setFormData({ name: '', email: '', phone: '', cfHandle: '' });
-        fetchStudents(); // refresh table
-      })
-      .catch((err) => console.error(err));
+
+    if (editId) {
+      axios.put(`http://localhost:5000/api/students/${editId}`, form)
+        .then(() => {
+          resetForm();
+          getStudents();
+        });
+    } else {
+      axios.post('http://localhost:5000/api/students', form)
+        .then(() => {
+          resetForm();
+          getStudents();
+        });
+    }
+  };
+
+  const resetForm = () => {
+    setForm({ name: '', email: '', phone: '', cfHandle: '' });
+    setEditId(null);
+  };
+
+  const handleEdit = student => {
+    setForm({
+      name: student.name,
+      email: student.email,
+      phone: student.phone,
+      cfHandle: student.cfHandle
+    });
+    setEditId(student._id);
+  };
+
+  const handleDelete = id => {
+    if (window.confirm('Delete this student?')) {
+      axios.delete(`http://localhost:5000/api/students/${id}`)
+        .then(() => getStudents());
+    }
   };
 
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Student List</h1>
+      <h2 className="text-xl font-semibold mb-4">
+        {editId ? 'Edit Student' : 'Add Student'}
+      </h2>
 
-      {/* Form */}
-      <form onSubmit={handleSubmit} className="space-y-4 mb-6 bg-gray-100 p-4 rounded">
-        <div className="grid grid-cols-2 gap-4">
-          <input name="name" placeholder="Name" value={formData.name} onChange={handleChange} className="p-2 border rounded" />
-          <input name="email" placeholder="Email" value={formData.email} onChange={handleChange} className="p-2 border rounded" />
-          <input name="phone" placeholder="Phone" value={formData.phone} onChange={handleChange} className="p-2 border rounded" />
-          <input name="cfHandle" placeholder="Codeforces Handle" value={formData.cfHandle} onChange={handleChange} className="p-2 border rounded" />
+      <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-4 bg-gray-100 p-4 rounded mb-6">
+        <input
+          name="name"
+          value={form.name}
+          onChange={handleChange}
+          placeholder="Name"
+          className="p-2 border rounded"
+        />
+        <input
+          name="email"
+          value={form.email}
+          onChange={handleChange}
+          placeholder="Email"
+          className="p-2 border rounded"
+        />
+        <input
+          name="phone"
+          value={form.phone}
+          onChange={handleChange}
+          placeholder="Phone"
+          className="p-2 border rounded"
+        />
+        <input
+          name="cfHandle"
+          value={form.cfHandle}
+          onChange={handleChange}
+          placeholder="Codeforces Handle"
+          className="p-2 border rounded"
+        />
+        <div className="col-span-2 flex gap-4">
+          <button
+            type="submit"
+            className="bg-blue-600 text-white px-4 py-2 rounded"
+          >
+            {editId ? 'Update' : 'Add'}
+          </button>
+          {editId && (
+            <button
+              type="button"
+              onClick={resetForm}
+              className="bg-gray-500 text-white px-4 py-2 rounded"
+            >
+              Cancel
+            </button>
+          )}
         </div>
-        <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded">Add Student</button>
       </form>
 
-      {/* Table */}
-      <table className="min-w-full bg-white border">
+      <table className="w-full border text-sm">
         <thead className="bg-gray-200">
           <tr>
-            <th className="p-2 border">Name</th>
-            <th className="p-2 border">Email</th>
-            <th className="p-2 border">Phone</th>
-            <th className="p-2 border">CF Handle</th>
-            <th className="p-2 border">Actions</th>
+            <th className="border p-2 text-left">Name</th>
+            <th className="border p-2 text-left">Email</th>
+            <th className="border p-2 text-left">Phone</th>
+            <th className="border p-2 text-left">CF Handle</th>
+            <th className="border p-2 text-left">Actions</th>
           </tr>
         </thead>
         <tbody>
-          {students.map((s) => (
-            <tr key={s._id}>
-              <td className="p-2 border">{s.name}</td>
-              <td className="p-2 border">{s.email}</td>
-              <td className="p-2 border">{s.phone}</td>
-              <td className="p-2 border">{s.cfHandle}</td>
-              <td className="p-2 border">
-                <Link to={`/student/${s._id}`} className="text-blue-600">View</Link>
+          {students.map(student => (
+            <tr key={student._id} className="hover:bg-gray-50">
+              <td className="border p-2">{student.name}</td>
+              <td className="border p-2">{student.email}</td>
+              <td className="border p-2">{student.phone}</td>
+              <td className="border p-2">{student.cfHandle}</td>
+              <td className="border p-2 space-x-2">
+                <Link
+                  to={`/student/${student._id}`}
+                  className="text-blue-600 hover:underline"
+                >
+                  View
+                </Link>
+                <button
+                  onClick={() => handleEdit(student)}
+                  className="text-yellow-600 hover:underline"
+                >
+                  Edit
+                </button>
+                <button
+                  onClick={() => handleDelete(student._id)}
+                  className="text-red-600 hover:underline"
+                >
+                  Delete
+                </button>
               </td>
             </tr>
           ))}
