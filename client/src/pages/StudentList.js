@@ -120,7 +120,9 @@ function StudentList() {
         </div>
       </form>
 
-      <table className="w-full border text-sm">
+      <div className="overflow-x-auto">
+        <table className="min-w-full border text-sm">
+
         <thead className="bg-gray-200">
           <tr>
             <th className="border p-2 text-left">Name</th>
@@ -161,6 +163,7 @@ function StudentList() {
           ))}
         </tbody>
       </table>
+      </div>
     </div>
   );
 }
