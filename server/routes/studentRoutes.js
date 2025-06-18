@@ -51,4 +51,16 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
+
+// GET a single student by ID
+router.get('/:id', async (req, res) => {
+  try {
+    const student = await Student.findById(req.params.id);
+    if (!student) return res.status(404).json({ error: 'Student not found' });
+    res.json(student);
+  } catch (err) {
+    res.status(400).json({ error: 'Invalid student ID' });
+  }
+});
+
 module.exports = router;
