@@ -27,22 +27,29 @@ function StudentList() {
   };
 
   const handleSubmit = e => {
-    e.preventDefault();
+  e.preventDefault();
 
-    if (editId) {
-      axios.put(`http://localhost:5000/api/students/${editId}`, form)
-        .then(() => {
-          resetForm();
-          getStudents();
-        });
-    } else {
-      axios.post('http://localhost:5000/api/students', form)
-        .then(() => {
-          resetForm();
-          getStudents();
-        });
-    }
-  };
+  // ✅ Basic validation
+  if (!form.name || !form.email || !form.phone || !form.cfHandle) {
+    alert('Please fill out all fields before submitting.');
+    return;
+  }
+
+  if (editId) {
+    axios.put(`http://localhost:5000/api/students/${editId}`, form)
+      .then(() => {
+        resetForm();
+        getStudents();
+      });
+  } else {
+    axios.post('http://localhost:5000/api/students', form)
+      .then(() => {
+        resetForm();
+        getStudents();
+      });
+  }
+};
+
 
   const resetForm = () => {
     setForm({ name: '', email: '', phone: '', cfHandle: '' });
@@ -65,6 +72,7 @@ function StudentList() {
         .then(() => getStudents());
     }
   };
+  
 
   return (
     <div className="p-6">
