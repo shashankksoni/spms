@@ -132,44 +132,55 @@ function StudentList() {
         <table className="min-w-full border text-sm">
 
         <thead className="bg-gray-200">
-          <tr>
-            <th className="border p-2 text-left">Name</th>
-            <th className="border p-2 text-left">Email</th>
-            <th className="border p-2 text-left">Phone</th>
-            <th className="border p-2 text-left">CF Handle</th>
-            <th className="border p-2 text-left">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {students.map(student => (
-            <tr key={student._id} className="hover:bg-gray-50">
-              <td className="border p-2">{student.name}</td>
-              <td className="border p-2">{student.email}</td>
-              <td className="border p-2">{student.phone}</td>
-              <td className="border p-2">{student.cfHandle}</td>
-              <td className="border p-2 space-x-2">
-                <Link
-                  to={`/student/${student._id}`}
-                  className="text-blue-600 hover:underline"
-                >
-                  View
-                </Link>
-                <button
-                  onClick={() => handleEdit(student)}
-                  className="text-yellow-600 hover:underline"
-                >
-                  Edit
-                </button>
-                <button
-                  onClick={() => handleDelete(student._id)}
-                  className="text-red-600 hover:underline"
-                >
-                  Delete
-                </button>
-              </td>
+            <tr>
+                <th className="border p-2 text-left">Name</th>
+                <th className="border p-2 text-left">Email</th>
+                <th className="border p-2 text-left">Phone</th>
+                <th className="border p-2 text-left">CF Handle</th>
+                <th className="border p-2 text-left">Last Synced</th> {/* ✅ NEW */}
+                <th className="border p-2 text-left">Actions</th>
             </tr>
-          ))}
-        </tbody>
+        </thead>
+
+<tbody>
+  {students.map(student => (
+    <tr key={student._id} className="hover:bg-gray-50">
+      <td className="border p-2">{student.name}</td>
+      <td className="border p-2">{student.email}</td>
+      <td className="border p-2">{student.phone}</td>
+      <td className="border p-2">{student.cfHandle}</td>
+
+      {/* ✅ New Last Synced Column */}
+      <td className="border p-2">
+        {student.lastSynced
+          ? new Date(student.lastSynced).toLocaleString()
+          : 'N/A'}
+      </td>
+
+      <td className="border p-2 space-x-2">
+        <Link
+          to={`/student/${student._id}`}
+          className="text-blue-600 hover:underline"
+        >
+          View
+        </Link>
+        <button
+          onClick={() => handleEdit(student)}
+          className="text-yellow-600 hover:underline"
+        >
+          Edit
+        </button>
+        <button
+          onClick={() => handleDelete(student._id)}
+          className="text-red-600 hover:underline"
+        >
+          Delete
+        </button>
+      </td>
+    </tr>
+  ))}
+</tbody>
+
       </table>
       </div>
     </div>

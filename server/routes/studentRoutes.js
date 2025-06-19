@@ -5,7 +5,7 @@ const Student = require('../models/student');
 // GET all students
 router.get('/', async (req, res) => {
   try {
-    const students = await Student.find();
+    const students = await Student.find().sort({ createdAt: -1 });
     res.json(students);
   } catch (err) {
     res.status(500).json({ error: err.message });

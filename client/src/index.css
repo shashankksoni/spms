@@ -16,3 +16,8 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+.color-empty { fill: #eee; }
+.color-scale-1 { fill: #d6e685; }
+.color-scale-2 { fill: #8cc665; }
+.color-scale-3 { fill: #44a340; }
+.color-scale-4 { fill: #1e6823; }
