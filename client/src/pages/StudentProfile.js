@@ -1,3 +1,6 @@
+import {
+  LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer
+} from 'recharts';
 import { getContestHistory } from '../services/codeforcesService';
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
@@ -9,9 +12,11 @@ const StudentProfile = () => {
   // eslint-disable-next-line no-unused-vars
   const [allContests, setAllContests] = useState([]);
   const [filteredContests, setFilteredContests] = useState([]);
+  const [filterDays, setFilterDays] = useState(90);
 
 
-  useEffect(() => {
+
+useEffect(() => {
   const fetchStudentAndContests = async () => {
     try {
       const res = await axios.get(`http://localhost:5000/api/students/${id}`);
@@ -19,7 +24,6 @@ const StudentProfile = () => {
 
       const contests = await getContestHistory(res.data.cfHandle);
       setAllContests(contests);
-      setFilteredContests(contests); // We'll filter this later
     } catch (err) {
       console.error('Error:', err);
     }
@@ -27,6 +31,20 @@ const StudentProfile = () => {
 
   fetchStudentAndContests();
 }, [id]);
+
+
+
+useEffect(() => {
+  const filtered = allContests.filter(c => {
+    const contestDate = new Date(c.ratingUpdateTimeSeconds * 1000);
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - filterDays);
+    return contestDate >= cutoff;
+  });
+
+  setFilteredContests(filtered);
+}, [filterDays, allContests]);
+
 
 
   if (!student) return <div className="p-4">Loading student data...</div>;
@@ -42,13 +60,34 @@ const StudentProfile = () => {
 
     {/* ✅ Temporary contest output */}
     <h2 className="mt-6 text-lg font-semibold">Contest History</h2>
-    <ul className="list-disc ml-6 mt-2">
-      {filteredContests.map((c, index) => (
-        <li key={index}>
-          {c.contestName} – Rating: {c.oldRating} → {c.newRating}
-        </li>
-      ))}
-    </ul>
+
+<div className="mb-4">
+  <label className="mr-2">Filter:</label>
+  <select
+    value={filterDays}
+    onChange={(e) => setFilterDays(Number(e.target.value))}
+    className="border px-2 py-1"
+  >
+    <option value={30}>Last 30 days</option>
+    <option value={90}>Last 90 days</option>
+    <option value={365}>Last 365 days</option>
+  </select>
+</div>
+
+{filteredContests.length === 0 ? (
+  <p>No contest data available for the selected range.</p>
+) : (
+  <ResponsiveContainer width="100%" height={300}>
+    <LineChart data={filteredContests}>
+      <CartesianGrid strokeDasharray="3 3" />
+      <XAxis dataKey="contestName" tick={{ fontSize: 10 }} interval={0} angle={-45} height={100} />
+      <YAxis />
+      <Tooltip />
+      <Line type="monotone" dataKey="newRating" stroke="#8884d8" />
+    </LineChart>
+  </ResponsiveContainer>
+)}
+
   </div>
 );
 }
