@@ -3,19 +3,17 @@ import { useParams } from 'react-router-dom';
 import axios from 'axios';
 import {
   LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer,
+  BarChart, Bar, Cell
 } from 'recharts';
-
 import { getContestHistory } from '../services/codeforcesService';
 import { getAcceptedProblems } from '../services/problemService';
 
 const StudentProfile = () => {
   const { id } = useParams();
   const [student, setStudent] = useState(null);
-
   const [allContests, setAllContests] = useState([]);
   const [filteredContests, setFilteredContests] = useState([]);
   const [filterDays, setFilterDays] = useState(90);
-
   const [acceptedProblems, setAcceptedProblems] = useState([]);
   const [problemFilterDays, setProblemFilterDays] = useState(30);
   const [stats, setStats] = useState({
@@ -25,7 +23,6 @@ const StudentProfile = () => {
     avgPerDay: 0,
   });
 
-  // Fetch student and Codeforces data
   useEffect(() => {
     const fetchStudentAndContests = async () => {
       try {
@@ -38,16 +35,15 @@ const StudentProfile = () => {
         const problems = await getAcceptedProblems(res.data.cfHandle);
         setAcceptedProblems(problems);
       } catch (err) {
-        console.error('Error fetching data:', err.message);
+        console.error('Error:', err);
       }
     };
 
     fetchStudentAndContests();
   }, [id]);
 
-  // Filter contest data
   useEffect(() => {
-    const filtered = allContests.filter((c) => {
+    const filtered = allContests.filter(c => {
       const contestDate = new Date(c.ratingUpdateTimeSeconds * 1000);
       const cutoff = new Date();
       cutoff.setDate(cutoff.getDate() - filterDays);
@@ -57,22 +53,43 @@ const StudentProfile = () => {
     setFilteredContests(filtered);
   }, [filterDays, allContests]);
 
-  // Calculate problem solving stats
   useEffect(() => {
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - problemFilterDays);
 
-    const filtered = acceptedProblems.filter((p) => p.date >= cutoff);
+    const filtered = acceptedProblems.filter(p => p.date >= cutoff);
 
     const total = filtered.length;
     const hardest = filtered.reduce((max, p) => (p.rating > (max?.rating || 0) ? p : max), null);
     const averageRating = total
       ? Math.round(filtered.reduce((sum, p) => sum + (p.rating || 0), 0) / total)
       : 0;
-    const avgPerDay = Math.round((total / problemFilterDays) * 10) / 10;
+    const avgPerDay = Math.round(total / problemFilterDays * 10) / 10;
 
     setStats({ total, hardest, averageRating, avgPerDay });
   }, [problemFilterDays, acceptedProblems]);
+
+  const getRatingBuckets = (problems) => {
+    const buckets = {};
+    problems.forEach(p => {
+      const rating = p.rating || 0;
+      const bucket = Math.floor(rating / 200) * 200;
+      const label = `${bucket}-${bucket + 199}`;
+      buckets[label] = (buckets[label] || 0) + 1;
+    });
+
+    return Object.entries(buckets)
+      .map(([label, count]) => ({ label, count }))
+      .sort((a, b) => parseInt(a.label) - parseInt(b.label));
+  };
+
+  const ratingData = getRatingBuckets(
+    acceptedProblems.filter(p => {
+      const cutoff = new Date();
+      cutoff.setDate(cutoff.getDate() - problemFilterDays);
+      return p.date >= cutoff;
+    })
+  );
 
   if (!student) return <div className="p-4">Loading student data...</div>;
 
@@ -114,8 +131,7 @@ const StudentProfile = () => {
         </ResponsiveContainer>
       )}
 
-      {/* ✅ Problem Solving Stats Section */}
-      <h2 className="mt-10 text-lg font-semibold">Problem Solving Data</h2>
+      <h2 className="mt-6 text-lg font-semibold">Problem Solving Data</h2>
 
       <div className="mb-4">
         <label className="mr-2">Filter:</label>
@@ -148,6 +164,21 @@ const StudentProfile = () => {
           <p>{stats.avgPerDay}</p>
         </div>
       </div>
+
+      <h2 className="text-lg font-semibold mb-2">Problems Solved by Rating</h2>
+      {ratingData.length === 0 ? (
+        <p>No problem data to show.</p>
+      ) : (
+        <ResponsiveContainer width="100%" height={250}>
+          <BarChart data={ratingData}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="label" />
+            <YAxis />
+            <Tooltip />
+            <Bar dataKey="count" fill="#4f46e5" />
+          </BarChart>
+        </ResponsiveContainer>
+      )}
     </div>
   );
 };
