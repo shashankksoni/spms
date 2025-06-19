@@ -2,29 +2,30 @@ import axios from 'axios';
 
 export const getAcceptedProblems = async (handle) => {
   try {
-    const response = await axios.get(
+    const res = await axios.get(
       `https://codeforces.com/api/user.status?handle=${handle}`
     );
 
-    const submissions = response.data.result;
+    const submissions = res.data.result;
 
-    const solvedMap = new Map();
+    const uniqueProblems = new Map();
 
-    submissions.forEach(sub => {
+    submissions.forEach((sub) => {
       if (sub.verdict === 'OK' && sub.problem) {
-        const problemId = `${sub.problem.contestId}-${sub.problem.index}`;
-        if (!solvedMap.has(problemId)) {
-          solvedMap.set(problemId, {
+        const id = `${sub.problem.contestId}-${sub.problem.index}`;
+        if (!uniqueProblems.has(id)) {
+          uniqueProblems.set(id, {
             rating: sub.problem.rating || 0,
-            date: new Date(sub.creationTimeSeconds * 1000)
+            date: new Date(sub.creationTimeSeconds * 1000),
+            name: `${sub.problem.name} (${sub.problem.contestId}-${sub.problem.index})`,
           });
         }
       }
     });
 
-    return Array.from(solvedMap.values());
-  } catch (error) {
-    console.error('Error fetching problem submissions:', error);
+    return Array.from(uniqueProblems.values());
+  } catch (err) {
+    console.error("Error fetching submissions:", err.message);
     return [];
   }
 };
