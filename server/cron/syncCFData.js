@@ -2,6 +2,10 @@
 const cron = require('node-cron');
 const axios = require('axios');
 const Student = require('../models/student');
+const sendReminderEmail = require('../services/emailService');
+
+// ⏳ Delay utility to pause between emails
+const delay = ms => new Promise(res => setTimeout(res, ms));
 
 const syncCodeforcesData = async () => {
   console.log('[CRON] Syncing Codeforces data...');
@@ -21,11 +25,19 @@ const syncCodeforcesData = async () => {
       student.cfData = info;
 
       await student.save();
-      console.log(`Updated: ${student.name} (${student.cfHandle})`);
+      console.log(`✅ Updated: ${student.name} (${student.cfHandle})`);
+
+      // 📨 Send email reminder
+      const emailResult = await sendReminderEmail(student.email, student.name);
+      console.log('📧 Reminder email sent to', student.email);
+      console.log('Reminder email result:', emailResult);
 
     } catch (err) {
-      console.error(`Failed to update ${student.cfHandle}:`, err.message);
+      console.error(`❌ Failed to update ${student.cfHandle}:`, err.message);
     }
+
+    // ⏱ Add delay between each student to prevent rate limit
+    await delay(600); // ~1.5 requests/sec
   }
 };
 
