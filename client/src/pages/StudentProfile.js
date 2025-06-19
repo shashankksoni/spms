@@ -1,12 +1,11 @@
+import { LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer,
+  BarChart, Bar } from 'recharts';
+import CalendarHeatmap from 'react-calendar-heatmap';
+import 'react-calendar-heatmap/dist/styles.css';
+import { getContestHistory, getAcceptedProblems } from '../services/codeforcesService';
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
-import {
-  LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer,
-  BarChart, Bar, Cell
-} from 'recharts';
-import { getContestHistory } from '../services/codeforcesService';
-import { getAcceptedProblems } from '../services/problemService';
 
 const StudentProfile = () => {
   const { id } = useParams();
@@ -16,12 +15,7 @@ const StudentProfile = () => {
   const [filterDays, setFilterDays] = useState(90);
   const [acceptedProblems, setAcceptedProblems] = useState([]);
   const [problemFilterDays, setProblemFilterDays] = useState(30);
-  const [stats, setStats] = useState({
-    total: 0,
-    hardest: null,
-    averageRating: 0,
-    avgPerDay: 0,
-  });
+  const [stats, setStats] = useState({ total: 0, hardest: null, averageRating: 0, avgPerDay: 0 });
 
   useEffect(() => {
     const fetchStudentAndContests = async () => {
@@ -43,6 +37,20 @@ const StudentProfile = () => {
   }, [id]);
 
   useEffect(() => {
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - problemFilterDays);
+
+    const filtered = acceptedProblems.filter(p => p.date >= cutoff);
+
+    const total = filtered.length;
+    const hardest = filtered.reduce((max, p) => (p.rating > (max?.rating || 0) ? p : max), null);
+    const averageRating = total ? Math.round(filtered.reduce((sum, p) => sum + (p.rating || 0), 0) / total) : 0;
+    const avgPerDay = Math.round((total / problemFilterDays) * 10) / 10;
+
+    setStats({ total, hardest, averageRating, avgPerDay });
+  }, [problemFilterDays, acceptedProblems]);
+
+  useEffect(() => {
     const filtered = allContests.filter(c => {
       const contestDate = new Date(c.ratingUpdateTimeSeconds * 1000);
       const cutoff = new Date();
@@ -52,22 +60,6 @@ const StudentProfile = () => {
 
     setFilteredContests(filtered);
   }, [filterDays, allContests]);
-
-  useEffect(() => {
-    const cutoff = new Date();
-    cutoff.setDate(cutoff.getDate() - problemFilterDays);
-
-    const filtered = acceptedProblems.filter(p => p.date >= cutoff);
-
-    const total = filtered.length;
-    const hardest = filtered.reduce((max, p) => (p.rating > (max?.rating || 0) ? p : max), null);
-    const averageRating = total
-      ? Math.round(filtered.reduce((sum, p) => sum + (p.rating || 0), 0) / total)
-      : 0;
-    const avgPerDay = Math.round(total / problemFilterDays * 10) / 10;
-
-    setStats({ total, hardest, averageRating, avgPerDay });
-  }, [problemFilterDays, acceptedProblems]);
 
   const getRatingBuckets = (problems) => {
     const buckets = {};
@@ -81,6 +73,16 @@ const StudentProfile = () => {
     return Object.entries(buckets)
       .map(([label, count]) => ({ label, count }))
       .sort((a, b) => parseInt(a.label) - parseInt(b.label));
+  };
+
+  const getHeatmapData = () => {
+    const dataMap = {};
+    acceptedProblems.forEach(p => {
+      const dateStr = p.date.toISOString().split('T')[0];
+      dataMap[dateStr] = (dataMap[dateStr] || 0) + 1;
+    });
+
+    return Object.entries(dataMap).map(([date, count]) => ({ date, count }));
   };
 
   const ratingData = getRatingBuckets(
@@ -103,7 +105,6 @@ const StudentProfile = () => {
       <p>Max Rating: {student.maxRating || 'N/A'}</p>
 
       <h2 className="mt-6 text-lg font-semibold">Contest History</h2>
-
       <div className="mb-4">
         <label className="mr-2">Filter:</label>
         <select
@@ -132,7 +133,6 @@ const StudentProfile = () => {
       )}
 
       <h2 className="mt-6 text-lg font-semibold">Problem Solving Data</h2>
-
       <div className="mb-4">
         <label className="mr-2">Filter:</label>
         <select
@@ -146,22 +146,22 @@ const StudentProfile = () => {
         </select>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-        <div className="border p-4 rounded bg-gray-50">
-          <p className="font-medium">Total Problems Solved:</p>
-          <p>{stats.total}</p>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+        <div className="bg-gray-100 p-4 rounded">
+          <p className="text-sm">Total Solved</p>
+          <p className="text-xl font-bold">{stats.total}</p>
         </div>
-        <div className="border p-4 rounded bg-gray-50">
-          <p className="font-medium">Most Difficult Solved:</p>
-          <p>{stats.hardest ? `${stats.hardest.name} (${stats.hardest.rating})` : 'N/A'}</p>
+        <div className="bg-gray-100 p-4 rounded">
+          <p className="text-sm">Hardest Problem</p>
+          <p className="text-xl font-bold">{stats.hardest?.name || 'N/A'}</p>
         </div>
-        <div className="border p-4 rounded bg-gray-50">
-          <p className="font-medium">Average Problem Rating:</p>
-          <p>{stats.averageRating}</p>
+        <div className="bg-gray-100 p-4 rounded">
+          <p className="text-sm">Avg Rating</p>
+          <p className="text-xl font-bold">{stats.averageRating}</p>
         </div>
-        <div className="border p-4 rounded bg-gray-50">
-          <p className="font-medium">Average per Day:</p>
-          <p>{stats.avgPerDay}</p>
+        <div className="bg-gray-100 p-4 rounded">
+          <p className="text-sm">Avg/Day</p>
+          <p className="text-xl font-bold">{stats.avgPerDay}</p>
         </div>
       </div>
 
@@ -179,6 +179,23 @@ const StudentProfile = () => {
           </BarChart>
         </ResponsiveContainer>
       )}
+
+      <h2 className="text-lg font-semibold mt-6">Submission Heatmap</h2>
+      <CalendarHeatmap
+        startDate={new Date(new Date().setDate(new Date().getDate() - 180))}
+        endDate={new Date()}
+        values={getHeatmapData()}
+        classForValue={(value) => {
+          if (!value) return 'color-empty';
+          if (value.count > 10) return 'color-scale-4';
+          if (value.count > 6) return 'color-scale-3';
+          if (value.count > 3) return 'color-scale-2';
+          return 'color-scale-1';
+        }}
+        tooltipDataAttrs={value => ({
+          'data-tip': `${value.date}: ${value.count || 0} submissions`,
+        })}
+      />
     </div>
   );
 };
