@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Student = require('../models/student');
+const { fetchAndUpdateStudentCFData } = require('../services/codeforcesService');
 
 // GET all students
 router.get('/', async (req, res) => {
@@ -29,15 +30,30 @@ router.post('/', async (req, res) => {
   }
 });
 
-// PUT update student
+// UPDATE student
 router.put('/:id', async (req, res) => {
-  const { id } = req.params;
-
   try {
-    const updated = await Student.findByIdAndUpdate(id, req.body, { new: true });
-    res.json(updated);
+    const student = await Student.findById(req.params.id);
+    if (!student) return res.status(404).json({ error: 'Student not found' });
+
+    const wasHandleChanged = student.cfHandle !== req.body.cfHandle;
+
+    // Update student fields
+    student.name = req.body.name || student.name;
+    student.email = req.body.email || student.email;
+    student.phone = req.body.phone || student.phone;
+    student.cfHandle = req.body.cfHandle || student.cfHandle;
+
+    await student.save();
+
+    if (wasHandleChanged) {
+      // Re-fetch data from Codeforces if handle changed
+      await fetchAndUpdateStudentCFData(student);
+    }
+
+    res.json(student);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(400).json({ error: err.message });
   }
 });
 
