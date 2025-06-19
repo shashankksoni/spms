@@ -73,30 +73,34 @@ const StudentProfile = () => {
       </div>
 
       {filteredContests.length === 0 ? (
-        <p>No contest data available for the selected range.</p>
-      ) : (
-        <div style={{ width: '100%', height: 300 }}>
-          <ResponsiveContainer>
-            <LineChart data={filteredContests}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis
-                dataKey="contestName"
-                tick={{ fontSize: 10 }}
-                interval={0}
-                angle={-45}
-                height={100}
-              />
-              <YAxis />
-              <Tooltip />
-              <Line
-                type="monotone"
-                dataKey="newRating"
-                stroke="#8884d8"
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-      )}
+  <div className="text-gray-700">
+    <p>
+      No contest data available for <strong>{student.cfHandle}</strong> in the selected range.
+    </p>
+    <p className="text-sm text-gray-500">
+      They might not have participated in any rated contests in the last {filterDays} days.
+    </p>
+  </div>
+) : (
+  <div style={{ width: '100%', height: 300 }}>
+    <ResponsiveContainer>
+      <LineChart data={filteredContests}>
+        <CartesianGrid strokeDasharray="3 3" />
+        <XAxis
+          dataKey="contestName"
+          tick={{ fontSize: 10 }}
+          interval={0}
+          angle={-45}
+          height={100}
+        />
+        <YAxis />
+        <Tooltip />
+        <Line type="monotone" dataKey="newRating" stroke="#8884d8" />
+      </LineChart>
+    </ResponsiveContainer>
+  </div>
+)}
+
     </div>
   );
 };
